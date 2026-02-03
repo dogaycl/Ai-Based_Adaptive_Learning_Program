@@ -1,45 +1,77 @@
 import React, { useState } from 'react';
 import API from '../api/axiosConfig';
 import { useNavigate } from 'react-router-dom';
-import { getUserInfo } from '../utils/authUtils';
+import { toast } from 'react-toastify';
 
 const AddLesson = () => {
-    const [title, setTitle] = useState('');
-    const [description, setDescription] = useState('');
-    const [difficulty, setDifficulty] = useState('medium');
+    const [formData, setFormData] = useState({
+        title: '',
+        description: '',
+        content_text: '',
+        attachment_url: '',
+        difficulty: 'medium'
+    });
     const navigate = useNavigate();
-    const user = getUserInfo();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            // backend expects 'role' as a query param based on your routes
-            await API.post(`/lessons/?role=${user.role}`, { title, description, difficulty });
-            alert("Lesson created successfully!");
+            // URL'den ?role=... kısmını sildik, sadece veri gönderiyoruz
+            await API.post('/lessons/', formData);
+            toast.success("Lesson published successfully!");
             navigate('/teacher-dashboard');
         } catch (error) {
-            alert("Error creating lesson: " + error.response?.data?.detail);
+            // Hata detayını tam olarak görebilmek için console.log ekledik
+            console.error("422 Detayı:", error.response?.data?.detail);
+            const errorMsg = error.response?.data?.detail?.[0]?.msg || "Check form fields.";
+            toast.error(`Publish Error: ${errorMsg}`);
         }
     };
 
     return (
-        <div style={{ padding: '40px', maxWidth: '500px', margin: '0 auto' }}>
-            <h2>Create New Lesson</h2>
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                <input type="text" placeholder="Lesson Title" value={title} onChange={(e) => setTitle(e.target.value)} required style={inputStyle}/>
-                <textarea placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} style={inputStyle}/>
-                <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} style={inputStyle}>
+        <div className="max-w-3xl mx-auto py-10 bg-white p-8 rounded-3xl shadow-xl">
+            <h2 className="text-2xl font-bold text-soft-green mb-6">Create New Lesson</h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <input 
+                    className="w-full p-4 border rounded-xl"
+                    placeholder="Lesson Title"
+                    value={formData.title}
+                    onChange={(e) => setFormData({...formData, title: e.target.value})}
+                    required
+                />
+                <textarea 
+                    className="w-full p-4 border rounded-xl"
+                    placeholder="Description"
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                />
+                <textarea 
+                    className="w-full p-4 border rounded-xl h-32"
+                    placeholder="Lesson Content (Full Text)"
+                    value={formData.content_text}
+                    onChange={(e) => setFormData({...formData, content_text: e.target.value})}
+                />
+                <input 
+                    className="w-full p-4 border rounded-xl"
+                    placeholder="Attachment URL (PDF/Link)"
+                    value={formData.attachment_url}
+                    onChange={(e) => setFormData({...formData, attachment_url: e.target.value})}
+                />
+                <select 
+                    className="w-full p-4 border rounded-xl"
+                    value={formData.difficulty}
+                    onChange={(e) => setFormData({...formData, difficulty: e.target.value})}
+                >
                     <option value="easy">Easy</option>
                     <option value="medium">Medium</option>
                     <option value="hard">Hard</option>
                 </select>
-                <button type="submit" style={submitBtnStyle}>Create Lesson</button>
+                <button type="submit" className="w-full bg-soft-green text-white py-4 rounded-xl font-bold">
+                    Publish Lesson
+                </button>
             </form>
         </div>
     );
 };
-
-const inputStyle = { padding: '10px', borderRadius: '4px', border: '1px solid #ccc' };
-const submitBtnStyle = { padding: '10px', backgroundColor: '#4CAF50', color: 'white', border: 'none', cursor: 'pointer' };
 
 export default AddLesson;

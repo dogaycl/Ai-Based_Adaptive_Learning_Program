@@ -11,6 +11,8 @@ class LessonService:
         db_lesson = Lesson(
             title=lesson_data.title,
             description=lesson_data.description,
+            content_text=lesson_data.content_text, # Yeni alan
+            attachment_url=lesson_data.attachment_url, # Yeni alan
             difficulty=lesson_data.difficulty
         )
         return self.lesson_repo.create(db, db_lesson)
@@ -19,12 +21,5 @@ class LessonService:
         return self.lesson_repo.get_all(db)
 
     def update_lesson(self, db: Session, lesson_id: int, lesson_data: LessonCreate):
-        update_map = {
-            "title": lesson_data.title,
-            "description": lesson_data.description,
-            "difficulty": lesson_data.difficulty
-        }
+        update_map = lesson_data.dict() # Tüm alanları otomatik eşle
         return self.lesson_repo.update(db, lesson_id, update_map)
-
-    def remove_lesson(self, db: Session, lesson_id: int):
-        return self.lesson_repo.delete(db, lesson_id)

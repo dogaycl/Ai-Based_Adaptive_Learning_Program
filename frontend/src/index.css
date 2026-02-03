@@ -1,30 +1,31 @@
 @import "tailwindcss";
 
 @theme {
-  /* Özel Renk Tanımları */
   --color-soft-green: #4A7C44;
   --color-soft-gray: #F3F4F6;
   --color-dark-gray: #374151;
-  
-  /* Özel Köşe Yumuşatma Tanımları */
   --radius-xl: 1rem;
   --radius-2xl: 1.5rem;
 }
 
 @layer base {
   body {
-    /* Tanımladığımız değişkenleri @apply ile kullanıyoruz */
-    @apply bg-soft-gray font-sans text-dark-gray;
+    @apply bg-soft-gray font-sans text-dark-gray antialiased;
+    margin: 0;
+    padding: 0;
+  }
+  
+  h1, h2, h3 {
+    @apply font-bold text-soft-green;
   }
 }
 
-.bg-school-blur {
-  background-image: url('https://images.unsplash.com/photo-1523050853063-bd388f9c7d13?auto=format&fit=crop&q=80&w=2070');
-  background-size: cover;
-  background-position: center;
-  filter: blur(8px);
-  position: fixed;
-  width: 100%;
-  height: 100%;
-  z-index: -1;
+/* Global Container Ayarı */
+.container {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8;
+}
+
+/* Buton ve Inputlar İçin Standart Geçişler */
+button, input, select, textarea {
+  @apply transition-all duration-200;
 }

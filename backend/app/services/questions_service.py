@@ -11,6 +11,10 @@ class QuestionService:
         db_question = Question(
             lesson_id=question_data.lesson_id,
             content=question_data.content,
+            option_a=question_data.option_a, # Yeni alanlar
+            option_b=question_data.option_b,
+            option_c=question_data.option_c,
+            option_d=question_data.option_d,
             correct_answer=question_data.correct_answer,
             difficulty_level=question_data.difficulty_level
         )

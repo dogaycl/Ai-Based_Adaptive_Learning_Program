@@ -1,46 +1,75 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import API from '../api/axiosConfig';
-import { getUserInfo } from '../utils/authUtils';
+import { toast } from 'react-toastify';
 
 const AddQuestion = () => {
     const { lessonId } = useParams();
     const navigate = useNavigate();
-    const user = getUserInfo();
     const [formData, setFormData] = useState({
         content: '',
-        correct_answer: '',
+        option_a: '',
+        option_b: '',
+        option_c: '',
+        option_d: '',
+        correct_answer: 'A',
         difficulty_level: 1
     });
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            // Role parametresini kaldırdık, JWT token üzerinden backend hallediyor
             const payload = { ...formData, lesson_id: parseInt(lessonId) };
-            await API.post(`/questions/?role=${user.role}`, payload);
-            alert("Question added!");
-            setFormData({ content: '', correct_answer: '', difficulty_level: 1 });
+            await API.post('/questions/', payload);
+            toast.success("Question added successfully!");
+            // Formu temizle
+            setFormData({
+                content: '', option_a: '', option_b: '', option_c: '', option_d: '', 
+                correct_answer: 'A', difficulty_level: 1 
+            });
         } catch (error) {
-            alert("Error adding question.");
+            console.error("Hata detayı:", error.response?.data);
+            toast.error("Error: " + (error.response?.data?.detail?.[0]?.msg || "Failed to add question"));
         }
     };
 
     return (
-        <div style={{ padding: '40px', maxWidth: '500px', margin: '0 auto' }}>
-            <h2>Add Question to Lesson #{lessonId}</h2>
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                <textarea placeholder="Question Content" value={formData.content} onChange={(e) => setFormData({...formData, content: e.target.value})} required style={inputStyle}/>
-                <input type="text" placeholder="Correct Answer" value={formData.correct_answer} onChange={(e) => setFormData({...formData, correct_answer: e.target.value})} required style={inputStyle}/>
-                <label>Difficulty (1-5): {formData.difficulty_level}</label>
-                <input type="range" min="1" max="5" value={formData.difficulty_level} onChange={(e) => setFormData({...formData, difficulty_level: parseInt(e.target.value)})} />
-                <button type="submit" style={submitBtnStyle}>Add Question</button>
-                <button type="button" onClick={() => navigate('/teacher-dashboard')} style={{backgroundColor: '#666', color: 'white', border: 'none', padding: '10px'}}>Back to Dashboard</button>
+        <div className="max-w-2xl mx-auto py-10 bg-white p-8 rounded-3xl shadow-xl">
+            <h2 className="text-2xl font-bold text-soft-green mb-6">Add Question to Lesson #{lessonId}</h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <textarea 
+                    className="w-full p-4 border rounded-xl"
+                    placeholder="Question Content"
+                    value={formData.content}
+                    onChange={(e) => setFormData({...formData, content: e.target.value})}
+                    required
+                />
+                <div className="grid grid-cols-2 gap-4">
+                    <input className="p-3 border rounded-lg" placeholder="Option A" value={formData.option_a} onChange={(e)=>setFormData({...formData, option_a: e.target.value})} required />
+                    <input className="p-3 border rounded-lg" placeholder="Option B" value={formData.option_b} onChange={(e)=>setFormData({...formData, option_b: e.target.value})} required />
+                    <input className="p-3 border rounded-lg" placeholder="Option C" value={formData.option_c} onChange={(e)=>setFormData({...formData, option_c: e.target.value})} required />
+                    <input className="p-3 border rounded-lg" placeholder="Option D" value={formData.option_d} onChange={(e)=>setFormData({...formData, option_d: e.target.value})} required />
+                </div>
+                <div className="flex gap-4 items-center">
+                    <label className="font-bold text-gray-500 uppercase text-xs">Correct:</label>
+                    <select className="p-2 border rounded-lg" value={formData.correct_answer} onChange={(e)=>setFormData({...formData, correct_answer: e.target.value})}>
+                        <option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option>
+                    </select>
+                    <label className="font-bold text-gray-500 uppercase text-xs ml-auto">Difficulty (1-5):</label>
+                    <input type="number" min="1" max="5" className="w-16 p-2 border rounded-lg" value={formData.difficulty_level} onChange={(e)=>setFormData({...formData, difficulty_level: parseInt(e.target.value)})}/>
+                </div>
+                <div className="flex gap-4 mt-6">
+                    <button type="submit" className="flex-grow bg-soft-green text-white py-4 rounded-xl font-bold shadow-lg hover:bg-opacity-90">
+                        Save Question
+                    </button>
+                    <button type="button" onClick={() => navigate('/teacher-dashboard')} className="px-6 py-4 border-2 rounded-xl text-gray-400 font-bold">
+                        Finish
+                    </button>
+                </div>
             </form>
         </div>
     );
 };
-
-const inputStyle = { padding: '10px', borderRadius: '4px', border: '1px solid #ccc' };
-const submitBtnStyle = { padding: '10px', backgroundColor: '#2196f3', color: 'white', border: 'none', cursor: 'pointer' };
 
 export default AddQuestion;

@@ -2,109 +2,87 @@ import React, { useEffect, useState } from 'react';
 import API from '../api/axiosConfig';
 import { getUserInfo } from '../utils/authUtils';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const Dashboard = () => {
     const [stats, setStats] = useState(null);
     const [lessons, setLessons] = useState([]);
     const [aiRecommendation, setAiRecommendation] = useState(null);
+    const [userData, setUserData] = useState(null);
     const user = getUserInfo();
     const navigate = useNavigate();
 
-    // Dashboard.jsx içinde:
-// Dashboard.jsx içindeki useEffect
-useEffect(() => {
-    const checkAndFetch = async () => {
-        try {
-            // 1. Önce kullanıcının durumunu kontrol et
-            const statusRes = await API.get(`/auth/me/${user.id}`);
-            
-            if (user.role === 'student' && !statusRes.data.is_placement_completed) {
-                // Test çözülmemişse direkt yönlendir
-                navigate('/placement-test');
-                return;
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                // Ensure backend server is running!
+                const [statusRes, statsRes, aiRes, lessonsRes] = await Promise.all([
+                    API.get(`/auth/me/${user.id}`),
+                    API.get(`/history/stats/${user.id}`).catch(() => ({ data: { accuracy: 0 } })),
+                    API.get(`/recommendation/next-step/${user.id}`).catch(() => ({ data: null })),
+                    API.get('/lessons/')
+                ]);
+                
+                if (user.role === 'student' && !statusRes.data.is_placement_completed) {
+                    navigate('/placement-test');
+                    return;
+                }
+
+                setUserData(statusRes.data);
+                setStats(statsRes.data);
+                setAiRecommendation(aiRes.data);
+                setLessons(Array.isArray(lessonsRes.data) ? lessonsRes.data : []);
+            } catch (error) {
+                console.error("Dashboard Error:", error);
+                toast.error("Error loading dashboard data.");
             }
+        };
+        fetchData();
+    }, []);
 
-            // 2. Test çözülmüşse verileri getir
-            const [statsRes, aiRes, lessonsRes] = await Promise.all([
-                API.get(`/history/stats/${user.id}`),
-                API.get(`/recommendation/next-step/${user.id}`),
-                API.get('/lessons/')
-            ]);
-            
-            setStats(statsRes.data);
-            setAiRecommendation(aiRes.data);
-            setLessons(lessonsRes.data);
-            
-        } catch (error) {
-            console.error("Dashboard error:", error);
-            // Eğer istatistik yoksa (yeni kullanıcı) stats'ı boş bir obje yap ki loading'den çıksın
-            setStats({ accuracy: 0, total_solved: 0, total_time_seconds: 0 });
-        }
-    };
-
-    if (user && user.id) {
-        checkAndFetch();
-    }
-}, [user, navigate]);
-
-    const fetchDashboardData = async () => {
-        try {
-            const [statsRes, aiRes, lessonsRes] = await Promise.all([
-                API.get(`/history/stats/${user.id}`),
-                API.get(`/recommendation/next-step/${user.id}`),
-                API.get('/lessons/')
-            ]);
-            setStats(statsRes.data);
-            setAiRecommendation(aiRes.data);
-            setLessons(lessonsRes.data);
-        } catch (error) {
-            console.error("Error fetching dashboard data", error);
-        }
-    };
-
-    const startQuiz = (lessonId) => {
-        navigate(`/quiz/${lessonId}`);
-    };
-
-    if (!stats) return <div style={{ padding: '20px' }}>Loading your progress...</div>;
+    if (!userData) return <div className="text-center py-20 font-bold">Synchronizing your learning path...</div>;
 
     return (
-        <div style={{ padding: '20px', maxWidth: '900px', margin: '0 auto' }}>
-            <h1>Welcome back, {user.sub}!</h1>
-            
-            <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginBottom: '30px' }}>
-                <div style={cardStyle}><h3>Accuracy</h3><p style={statValue}>{stats.accuracy.toFixed(1)}%</p></div>
-                <div style={cardStyle}><h3>Solved</h3><p style={statValue}>{stats.total_solved}</p></div>
-                <div style={cardStyle}><h3>Study Time</h3><p style={statValue}>{Math.floor(stats.total_time_seconds / 60)} min</p></div>
-            </section>
+        <div className="space-y-8 pb-12">
+            <div className="bg-white p-8 rounded-3xl shadow-sm border flex flex-col md:flex-row gap-8 items-center">
+                <div className="h-20 w-20 bg-soft-green text-white rounded-full flex items-center justify-center text-2xl font-black">
+                    Lvl {userData.current_level}
+                </div>
+                <div className="flex-grow">
+                    <h1 className="text-2xl font-bold text-dark-gray">Welcome, {userData.username}!</h1>
+                    <div className="h-3 w-full bg-gray-100 rounded-full mt-2 overflow-hidden">
+                        <div className="h-full bg-soft-green" style={{ width: `${stats?.accuracy || 0}%` }}></div>
+                    </div>
+                </div>
+            </div>
 
-            {aiRecommendation && (
-                <section style={aiSectionStyle}>
-                    <h2 style={{ color: '#1976d2' }}>🤖 AI Learning Assistant</h2>
-                    <p><strong>Recommendation:</strong> {aiRecommendation.recommended_action}</p>
-                    <p><strong>Reason:</strong> {aiRecommendation.reason}</p>
-                </section>
-            )}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 bg-gradient-to-br from-soft-green to-[#2d5a27] text-white p-8 rounded-3xl shadow-xl">
+                    <h2 className="text-3xl font-black mb-2">{aiRecommendation?.recommended_action || "Start Learning"}</h2>
+                    <p className="opacity-80 mb-6">{aiRecommendation?.reason || "AI is analyzing your profile."}</p>
+                    <div className="bg-black/10 p-4 rounded-xl text-sm italic italic">"{aiRecommendation?.adaptive_tip || "Take a placement test to unlock tips."}"</div>
+                </div>
 
-            <h2 style={{ marginTop: '30px' }}>Available Lessons</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                <div className="bg-white p-8 rounded-3xl border shadow-sm">
+                    <h3 className="font-bold mb-4">Activity Log</h3>
+                    <div className="space-y-2">
+                        <div className="flex justify-between text-sm"><span className="text-gray-400">Accuracy</span><span className="font-bold">{stats?.accuracy || 0}%</span></div>
+                        <div className="flex justify-between text-sm"><span className="text-gray-400">Level</span><span className="font-bold">{userData.current_level}</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {lessons.map(lesson => (
-                    <div key={lesson.id} style={lessonCardStyle}>
-                        <h4>{lesson.title}</h4>
-                        <p>{lesson.description}</p>
-                        <small>Difficulty: {lesson.difficulty}</small>
-                        <button onClick={() => startQuiz(lesson.id)} style={startBtnStyle}>Start Quiz</button>
+                    <div key={lesson.id} className="bg-white p-6 rounded-2xl border shadow-sm hover:shadow-md transition">
+                        <span className="text-[10px] font-black uppercase text-soft-green bg-soft-gray px-2 py-1 rounded">{lesson.difficulty}</span>
+                        <h4 className="text-xl font-bold mt-3 mb-2">{lesson.title}</h4>
+                        <button onClick={() => navigate(`/quiz/${lesson.id}`)} className="w-full mt-4 bg-soft-green text-white py-2 rounded-xl font-bold">Start Quiz</button>
                     </div>
                 ))}
             </div>
         </div>
     );
 };
-
-const cardStyle = { padding: '15px', border: '1px solid #ddd', borderRadius: '8px', textAlign: 'center' };
-const aiSectionStyle = { backgroundColor: '#e3f2fd', padding: '20px', borderRadius: '10px', borderLeft: '5px solid #2196f3' };
-const statValue = { fontSize: '24px', fontWeight: 'bold', color: '#4CAF50' };
-const lessonCardStyle = { padding: '15px', border: '1px solid #ccc', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '5px' };
-const startBtnStyle = { marginTop: '10px', padding: '8px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' };
 
 export default Dashboard;

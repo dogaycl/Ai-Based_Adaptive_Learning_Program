@@ -17,9 +17,12 @@ def get_questions_by_lesson(lesson_id: int, db: Session = Depends(get_db)):
     return question_service.get_lesson_questions(db, lesson_id)
 
 @router.post("/", response_model=QuestionResponse)
-def add_question(question: QuestionCreate, role: str, db: Session = Depends(get_db)):
-    # Soru ekleme yetki kontrolüyle beraber tek fonksiyona indirildi
-    check_admin_role(role)
+def add_question(
+    question: QuestionCreate, 
+    db: Session = Depends(get_db),
+    admin_check = Depends(check_admin_role)
+):
+    # 'role: str' parametresi sildik!
     return question_service.add_question_to_lesson(db, question)
 
 @router.put("/{question_id}", response_model=QuestionResponse)
@@ -43,3 +46,10 @@ def get_placement_questions(db: Session = Depends(get_db)):
         questions = db.query(Question).filter(Question.difficulty_level == level).order_by(func.rand()).limit(2).all()
         all_questions.extend(questions)
     return all_questions
+
+@router.get("/lesson/{lesson_id}", response_model=List[QuestionResponse])
+def get_lesson_questions(
+    lesson_id: int, 
+    db: Session = Depends(get_db)
+):
+    return question_service.get_lesson_questions(db, lesson_id)
