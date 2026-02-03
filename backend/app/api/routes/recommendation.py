@@ -13,45 +13,54 @@ def get_ai_recommendation(user_id: int, db: Session = Depends(get_db)):
     lesson_breakdown = summary.get("lesson_breakdown", {})
     total_stats = summary.get("total_stats", {})
     
-    # Eğer hiç ders çözülmediyse (Yeni Kullanıcı)
+    # New User Scenario
     if not lesson_breakdown:
         return {
-            "recommended_action": "İlk Adımı At: Seviye Belirleme",
-            "reason": "Seni henüz tanımıyorum! Sistemdeki dersleri keşfetmeye başla.",
-            "adaptive_tip": "Önce 'Easy' (Kolay) seviyedeki dökümanları okumanı öneririm.",
-            "priority": "high"
+            "recommended_action": "Start Diagnostic Test",
+            "reason": "AI needs initial data to build your learning profile.",
+            "adaptive_tip": "Take the placement test to unlock personalized content.",
+            "priority": "high",
+            "is_critical": False,
+            "target_lesson": None
         }
     
-    # En zayıf halkayı bul (En düşük başarılı ders)
-    weakest_lesson_id = min(lesson_breakdown, key=lesson_breakdown.get)
-    success_rate = lesson_breakdown[weakest_lesson_id]
+    # Find weakest area
+    weakest_lesson = min(lesson_breakdown, key=lesson_breakdown.get)
+    success_rate = lesson_breakdown[weakest_lesson]
     
-    # Ortalama süreyi kontrol et (Öğrenci acele mi ediyor yoksa çok mu yavaş?)
     avg_time = total_stats.get("avg_time", 30) 
     
-    # --- GELİŞMİŞ AI MANTIĞI ---
-    if success_rate < 40:
-        action = f"Kritik Tekrar: {weakest_lesson_id}"
-        reason = f"Bu konuda başarı oranınız %{int(success_rate)}. Temelleri henüz oturtamamışsınız."
-        tip = "Soruları çözmeden önce ders dökümanındaki PDF'i tekrar incele. Acele etme, odaklanarak oku."
+    # --- ADVANCED AI LOGIC (ENGLISH) ---
+    is_critical = False
+    
+    if success_rate < 45:
+        # Critical Failure Logic
+        is_critical = True
+        action = "Critical Review Needed"
+        reason = f"Your success rate in '{weakest_lesson}' is only {int(success_rate)}%. Foundation is weak."
+        tip = "Review the PDF material before attempting more quizzes. Take your time."
+        
     elif success_rate < 75:
-        if avg_time < 15: # Çok hızlı ama hatalı
-            action = f"Odaklanma Pratiği: {weakest_lesson_id}"
-            reason = "Hızlısın ama çok hata yapıyorsun. AI, soruları daha dikkatli okuman gerektiğini analiz etti."
-            tip = "Soruyu yanıtlamadan önce en az 5 saniye düşünmeye çalış."
+        # Improvement Logic
+        if avg_time < 15: 
+            action = "Focus Practice"
+            reason = "You are fast but making errors. AI detected rushing behavior."
+            tip = "Try to spend at least 10 seconds analyzing the question stem."
         else:
-            action = f"Pekiştirme Zamanı: {weakest_lesson_id}"
-            reason = "Konuyu anladın ama henüz uzmanlaşmadın."
-            tip = "Benzer zorluktaki derslerle XP kazanmaya devam et."
+            action = "Deep Practice"
+            reason = "Good understanding, but not yet mastered."
+            tip = "Continue with similar difficulty to gain more XP."
     else:
-        # Başarı %75 üstü ise zorluğu arttır
-        action = "Yeni Meydan Okuma: Zor Seviye"
-        reason = "Mevcut konuları domine ettin. Yapay zeka senin için çıtayı yükseltiyor!"
-        tip = "Artık 'Hard' seviye derslere geçerek gerçek potansiyelini kanıtla."
+        # Mastery Logic
+        action = "Challenge: Hard Level"
+        reason = "You have dominated this topic. AI is increasing the difficulty."
+        tip = "Switch to 'Hard' difficulty questions to test your limits."
 
     return {
         "recommended_action": action,
         "reason": reason,
         "adaptive_tip": tip,
-        "priority": "normal"
+        "priority": "high" if is_critical else "normal",
+        "is_critical": is_critical,
+        "target_lesson": weakest_lesson
     }

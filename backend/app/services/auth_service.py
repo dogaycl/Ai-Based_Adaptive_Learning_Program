@@ -1,10 +1,8 @@
 from sqlalchemy.orm import Session
-
 from app.repositories.user_repository import UserRepository
 from app.models.user import User
 from app.core.security import hash_password, verify_password
 from app.core.jwt import create_access_token
-
 
 class AuthService:
     def __init__(self):
@@ -13,12 +11,14 @@ class AuthService:
     # ======================
     # REGISTER (password hashed)
     # ======================
-    def register(self, db, username, email, password, role):
+    def register(self, db: Session, username, email, password, role):
         user = User(
             username=username,
             email=email,
             hashed_password=hash_password(password),
-            role=role
+            role=role,
+            is_placement_completed=False,
+            current_level=1
         )
         db.add(user)
         db.commit()
@@ -49,3 +49,16 @@ class AuthService:
             "access_token": access_token,
             "token_type": "bearer"
         }
+
+    # ======================
+    # UPDATE PLACEMENT STATUS
+    # ======================
+    def update_placement_status(self, db: Session, user_id: int, level: int):
+        """Updates the student's level and marks the diagnostic test as completed."""
+        user = db.query(User).filter(User.id == user_id).first()
+        if user:
+            user.is_placement_completed = True
+            user.current_level = level
+            db.commit()
+            db.refresh(user)
+        return user

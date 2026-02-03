@@ -3,163 +3,198 @@ import { useParams, useNavigate } from 'react-router-dom';
 import API from '../api/axiosConfig';
 import { getUserInfo } from '../utils/authUtils';
 import { toast } from 'react-toastify';
+import { Clock, CheckCircle, XCircle, Award, ArrowRight, BookOpen } from 'lucide-react';
 
 const Quiz = () => {
     const { lessonId } = useParams();
-    const [questions, setQuestions] = useState([]);
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [selectedOption, setSelectedOption] = useState('');
-    const [timeLeft, setTimeLeft] = useState(30); // Her soru için 30 saniye
-    const [showHint, setShowHint] = useState(false);
-    const [startTime, setStartTime] = useState(Date.now());
     const navigate = useNavigate();
     const user = getUserInfo();
+
+    const [questions, setQuestions] = useState([]);
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [score, setScore] = useState(0);
+    const [timeLeft, setTimeLeft] = useState(30);
+    const [isFinished, setIsFinished] = useState(false);
+    const [loading, setLoading] = useState(true);
+    
+    // UI States for feedback
+    const [selectedOption, setSelectedOption] = useState(null);
+    const [isAnswerProcessed, setIsAnswerProcessed] = useState(false); // Prevent double clicks
 
     useEffect(() => {
         fetchQuestions();
     }, [lessonId]);
 
-    // Sayaç Mantığı
+    // Timer Logic
     useEffect(() => {
-        if (timeLeft <= 0) {
-            handleNext('TIMEOUT');
-            return;
+        if (timeLeft === 0 && !isAnswerProcessed) {
+            handleAnswer(null); // Time's up treated as wrong
         }
-        const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
+        if (isFinished || isAnswerProcessed) return;
+
+        const timer = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
         return () => clearInterval(timer);
-    }, [timeLeft]);
+    }, [timeLeft, isFinished, isAnswerProcessed]);
 
     const fetchQuestions = async () => {
         try {
             const res = await API.get(`/questions/lesson/${lessonId}`);
             setQuestions(res.data);
-            setStartTime(Date.now());
+            setLoading(false);
         } catch (error) {
-            toast.error("Error loading questions.");
+            toast.error("Could not load lesson content.");
             navigate('/dashboard');
         }
     };
 
-    const handleNext = async (timeoutAnswer = null) => {
-        const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+    const handleAnswer = async (optionKey) => {
+        if (isAnswerProcessed) return;
+        setIsAnswerProcessed(true);
+        setSelectedOption(optionKey);
+
         const currentQuestion = questions[currentIndex];
-        const finalAnswer = timeoutAnswer === 'TIMEOUT' ? 'NONE' : selectedOption;
+        const isCorrect = optionKey === currentQuestion.correct_answer;
+        const timeSpent = 30 - timeLeft;
 
-        const isCorrect = finalAnswer.toUpperCase() === currentQuestion.correct_answer.toUpperCase();
+        // Calculate Score
+        if (isCorrect) setScore((prev) => prev + 1);
 
-        if (!isCorrect && timeoutAnswer !== 'TIMEOUT') {
-            setShowHint(true); // Yanlışsa ipucunu göster
-            return; // Pop-up kapanana kadar ilerleme
-        }
-
-        await submitResult(finalAnswer, timeSpent);
-    };
-
-    const submitResult = async (ans, time) => {
+        // Send logic to backend (Silent background sync)
         try {
             await API.post(`/history/submit?user_id=${user.id}`, {
-                question_id: questions[currentIndex].id,
-                given_answer: ans,
-                time_spent_seconds: time
+                question_id: currentQuestion.id,
+                given_answer: optionKey || "TIMEOUT",
+                time_spent_seconds: timeSpent
             });
-            
-            if (currentIndex + 1 < questions.length) {
-                setCurrentIndex(currentIndex + 1);
-                setSelectedOption('');
-                setTimeLeft(30);
-                setStartTime(Date.now());
-                setShowHint(false);
-            } else {
-                toast.success("Quiz completed! Returning to dashboard...");
-                navigate('/dashboard');
-            }
-        } catch (error) {
-            toast.error("Failed to save progress.");
+        } catch (err) {
+            console.error("Failed to save progress");
         }
+
+        // Delay for visual feedback before next question
+        setTimeout(() => {
+            if (currentIndex + 1 < questions.length) {
+                setCurrentIndex((prev) => prev + 1);
+                setTimeLeft(30);
+                setSelectedOption(null);
+                setIsAnswerProcessed(false);
+            } else {
+                setIsFinished(true);
+            }
+        }, 1200); // 1.2 second delay to see the color
     };
 
-    if (questions.length === 0) return <div className="text-center py-20">Loading questions...</div>;
+    if (loading) return <div className="text-center py-20 text-soft-green font-bold">Loading Learning Module...</div>;
+    
+    if (questions.length === 0) return (
+        <div className="text-center py-20">
+            <h2 className="text-2xl font-bold text-gray-400">No questions available for this lesson yet.</h2>
+            <button onClick={() => navigate('/dashboard')} className="mt-4 text-soft-green font-bold underline">Go Back</button>
+        </div>
+    );
 
-    const q = questions[currentIndex];
-
-    return (
-        <div className="max-w-3xl mx-auto py-10 relative">
-            {/* AI Hint Pop-up (Modal) */}
-            {showHint && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl animate-in zoom-in duration-300">
-                        <div className="text-5xl mb-4">💡</div>
-                        <h3 className="text-xl font-bold text-soft-green mb-2">AI Adaptive Tip</h3>
-                        <p className="text-gray-600 mb-6 italic">
-                            "Almost there! Review the lesson content one more time. Focus on the core definitions mentioned in the text."
-                        </p>
-                        <button 
-                            onClick={() => {
-                                setShowHint(false);
-                                submitResult(selectedOption, Math.floor((Date.now() - startTime) / 1000));
-                            }}
-                            className="w-full bg-soft-green text-white py-3 rounded-xl font-bold hover:bg-opacity-90 transition"
-                        >
-                            Got it, Next Question
-                        </button>
+    // --- RESULT SCREEN ---
+    if (isFinished) {
+        const accuracy = Math.round((score / questions.length) * 100);
+        return (
+            <div className="max-w-md mx-auto py-10">
+                <div className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100 text-center">
+                    <div className="w-24 h-24 bg-soft-green/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <Award className="text-soft-green" size={48} />
                     </div>
-                </div>
-            )}
+                    <h2 className="text-3xl font-black text-dark-gray mb-2">Lesson Complete!</h2>
+                    <p className="text-gray-500 mb-8">AI is updating your learning profile.</p>
 
-            {/* Quiz UI */}
-            <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
-                <div className="bg-soft-green p-6 text-white flex justify-between items-center">
-                    <div>
-                        <span className="text-sm opacity-80 uppercase tracking-widest font-bold">Question</span>
-                        <div className="text-2xl font-black">{currentIndex + 1} / {questions.length}</div>
-                    </div>
-                    <div className={`h-16 w-16 rounded-full border-4 flex items-center justify-center text-xl font-bold ${timeLeft < 10 ? 'border-red-400 animate-pulse' : 'border-white/30'}`}>
-                        {timeLeft}s
-                    </div>
-                </div>
-
-                <div className="p-8">
-                    <h2 className="text-2xl font-medium text-dark-gray mb-10 leading-relaxed">
-                        {q.content}
-                    </h2>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {[
-                            { label: 'A', text: q.option_a },
-                            { label: 'B', text: q.option_b },
-                            { label: 'C', text: q.option_c },
-                            { label: 'D', text: q.option_d }
-                        ].map((opt) => (
-                            <button
-                                key={opt.label}
-                                onClick={() => setSelectedOption(opt.label)}
-                                className={`p-5 rounded-2xl border-2 text-left transition-all duration-200 flex items-center gap-4 ${
-                                    selectedOption === opt.label 
-                                    ? 'border-soft-green bg-soft-green/5 ring-4 ring-soft-green/10' 
-                                    : 'border-gray-100 hover:border-soft-green/30 hover:bg-gray-50'
-                                }`}
-                            >
-                                <span className={`h-8 w-8 rounded-lg flex items-center justify-center font-bold ${
-                                    selectedOption === opt.label ? 'bg-soft-green text-white' : 'bg-gray-100 text-gray-500'
-                                }`}>
-                                    {opt.label}
-                                </span>
-                                <span className="font-medium text-dark-gray">{opt.text}</span>
-                            </button>
-                        ))}
+                    <div className="grid grid-cols-2 gap-4 mb-8">
+                        <div className="bg-soft-gray p-4 rounded-2xl">
+                            <div className="text-xs uppercase font-bold text-gray-400">Score</div>
+                            <div className="text-2xl font-black text-soft-green">{score} / {questions.length}</div>
+                        </div>
+                        <div className="bg-soft-gray p-4 rounded-2xl">
+                            <div className="text-xs uppercase font-bold text-gray-400">Accuracy</div>
+                            <div className="text-2xl font-black text-dark-gray">%{accuracy}</div>
+                        </div>
                     </div>
 
                     <button 
-                        disabled={!selectedOption}
-                        onClick={() => handleNext()}
-                        className={`w-full mt-10 py-4 rounded-2xl font-bold text-lg transition shadow-lg ${
-                            selectedOption 
-                            ? 'bg-soft-green text-white hover:scale-[1.02] active:scale-95' 
-                            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                        }`}
+                        onClick={() => navigate('/dashboard')} 
+                        className="w-full py-4 rounded-xl font-bold bg-soft-green text-white shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2"
                     >
-                        {currentIndex + 1 === questions.length ? "Complete Quiz" : "Confirm Answer"}
+                         Return to Dashboard <ArrowRight size={20} />
                     </button>
+                </div>
+            </div>
+        );
+    }
+
+    const currentQuestion = questions[currentIndex];
+    const progress = ((currentIndex + 1) / questions.length) * 100;
+
+    return (
+        <div className="max-w-3xl mx-auto py-8">
+            {/* Header: Progress & Timer */}
+            <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center gap-2 text-gray-500 font-bold">
+                    <BookOpen size={20} className="text-soft-green"/>
+                    <span>Question {currentIndex + 1}</span>
+                    <span className="text-gray-300">/ {questions.length}</span>
+                </div>
+                <div className={`flex items-center gap-2 font-black px-4 py-2 rounded-full ${timeLeft < 10 ? 'bg-red-100 text-red-500' : 'bg-soft-gray text-soft-green'}`}>
+                    <Clock size={18} />
+                    {timeLeft}s
+                </div>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="w-full bg-gray-200 h-2 rounded-full mb-8 overflow-hidden">
+                <div className="bg-soft-green h-full transition-all duration-500 ease-out" style={{ width: `${progress}%` }}></div>
+            </div>
+
+            {/* Question Card */}
+            <div className="bg-white p-8 md:p-12 rounded-[2rem] shadow-xl border border-gray-100 relative overflow-hidden">
+                <h2 className="text-2xl md:text-3xl font-bold text-dark-gray mb-10 leading-snug">
+                    {currentQuestion.content}
+                </h2>
+
+                <div className="space-y-4">
+                    {[
+                        { key: 'A', text: currentQuestion.option_a },
+                        { key: 'B', text: currentQuestion.option_b },
+                        { key: 'C', text: currentQuestion.option_c },
+                        { key: 'D', text: currentQuestion.option_d }
+                    ].map((opt) => {
+                        let statusClass = "border-gray-100 hover:border-soft-green hover:bg-soft-green/5"; // Default
+                        
+                        if (isAnswerProcessed) {
+                            if (opt.key === currentQuestion.correct_answer) {
+                                statusClass = "bg-green-100 border-green-500 text-green-700 ring-2 ring-green-200"; // Correct
+                            } else if (opt.key === selectedOption) {
+                                statusClass = "bg-red-50 border-red-300 text-red-400"; // Wrong selection
+                            } else {
+                                statusClass = "opacity-50 border-gray-100 grayscale"; // Others
+                            }
+                        }
+
+                        return (
+                            <button
+                                key={opt.key}
+                                disabled={isAnswerProcessed}
+                                onClick={() => handleAnswer(opt.key)}
+                                className={`w-full p-5 rounded-2xl border-2 text-left transition-all duration-200 flex items-center gap-4 group ${statusClass}`}
+                            >
+                                <span className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm transition-colors ${
+                                    isAnswerProcessed && opt.key === currentQuestion.correct_answer ? 'bg-green-500 text-white' : 
+                                    'bg-gray-100 text-gray-500 group-hover:bg-soft-green group-hover:text-white'
+                                }`}>
+                                    {opt.key}
+                                </span>
+                                <span className="font-medium text-lg">{opt.text}</span>
+                                
+                                {/* Icons for result */}
+                                {isAnswerProcessed && opt.key === currentQuestion.correct_answer && <CheckCircle className="ml-auto text-green-600" />}
+                                {isAnswerProcessed && opt.key === selectedOption && opt.key !== currentQuestion.correct_answer && <XCircle className="ml-auto text-red-500" />}
+                            </button>
+                        )
+                    })}
                 </div>
             </div>
         </div>

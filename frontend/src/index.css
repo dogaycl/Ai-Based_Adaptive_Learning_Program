@@ -11,6 +11,10 @@
 @layer base {
   body {
     @apply bg-soft-gray font-sans text-dark-gray antialiased;
+    /* Hafif noktalı modern desen */
+    background-image: radial-gradient(#4A7C44 0.5px, transparent 0.5px);
+    background-size: 24px 24px;
+    background-color: #F9FAFB; /* Çok açık gri zemin */
     margin: 0;
     padding: 0;
   }
@@ -20,12 +24,10 @@
   }
 }
 
-/* Global Container Ayarı */
 .container {
   @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8;
 }
 
-/* Buton ve Inputlar İçin Standart Geçişler */
 button, input, select, textarea {
   @apply transition-all duration-200;
 }
