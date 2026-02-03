@@ -42,28 +42,37 @@ class HistoryService:
             "total_time_seconds": total_time
         }
 
-    # HATA BURADAYDI: Bu fonksiyonun içeriği sağa kaydırıldı.
-    def get_user_summary(self, db: Session, user_id: int):
-        stats = self.get_user_stats(db, user_id)
-        return stats
+    # app/services/history_service.py
 
     def get_user_summary(self, db: Session, user_id: int):
         histories = self.history_repo.get_user_history(db, user_id)
-        stats = self.get_user_stats(db, user_id)
         
-        # Ders bazlı performans analizi (Gelişmiş veri yolu)
-        lesson_performance = defaultdict(lambda: {"correct": 0, "total": 0})
+        # Lesson performance tracking
+        lesson_data = defaultdict(lambda: {"correct": 0, "total": 0, "total_time": 0})
+        # Difficulty performance tracking
+        difficulty_data = defaultdict(lambda: {"correct": 0, "total": 0})
+
         for h in histories:
-            # Soru üzerinden ders bilgisini al (İlişkili tablo sorgusu gerekebilir, şimdilik soru ID bazlı)
-            lesson_id = h.question_id # Basitleştirilmiş mantık
-            lesson_performance[lesson_id]["total"] += 1
+            # We get the lesson title through the question relationship
+            lesson_title = h.question.lesson.title
+            diff_level = h.question.difficulty_level # 1 to 5
+            
+            lesson_data[lesson_title]["total"] += 1
+            lesson_data[lesson_title]["total_time"] += h.time_spent_seconds
             if h.is_correct:
-                lesson_performance[lesson_id]["correct"] += 1
+                lesson_data[lesson_title]["correct"] += 1
+                difficulty_data[diff_level]["correct"] += 1
+            
+            difficulty_data[diff_level]["total"] += 1
+
+        # Calculate percentages
+        lesson_breakdown = {
+            title: (d["correct"] / d["total"] * 100) if d["total"] > 0 else 0 
+            for title, d in lesson_data.items()
+        }
 
         return {
-            "general_stats": stats,
-            "lesson_breakdown": {
-                f"lesson_{lid}": (data["correct"] / data["total"] * 100) 
-                for lid, data in lesson_performance.items()
-            }
+            "lesson_breakdown": lesson_breakdown,
+            "difficulty_stats": difficulty_data,
+            "total_count": len(histories)
         }

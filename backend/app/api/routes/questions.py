@@ -1,3 +1,6 @@
+from sqlalchemy import func
+from app.models.questions import Question
+from sqlalchemy.sql.expression import func
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
@@ -31,3 +34,12 @@ def delete_question(question_id: int, role: str, db: Session = Depends(get_db)):
     if not success:
         raise HTTPException(status_code=404, detail="Soru bulunamadı")
     return {"message": "Soru başarıyla silindi"}
+
+@router.get("/placement-test")
+def get_placement_questions(db: Session = Depends(get_db)):
+    all_questions = []
+    # Her zorluk seviyesinden (1-5) rastgele 2'şer soru seçer
+    for level in range(1, 6):
+        questions = db.query(Question).filter(Question.difficulty_level == level).order_by(func.rand()).limit(2).all()
+        all_questions.extend(questions)
+    return all_questions

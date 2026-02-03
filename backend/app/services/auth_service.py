@@ -34,13 +34,14 @@ class AuthService:
         if not user:
             return None
 
-        if not verify_password(password, user.password):
+        if not verify_password(password, user.hashed_password):
             return None
 
         access_token = create_access_token(
             data={
                 "sub": user.email,
-                "role": user.role
+                "role": user.role,
+                "id": user.id
             }
         )
 
