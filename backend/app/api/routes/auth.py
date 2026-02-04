@@ -55,21 +55,27 @@ def get_user_status(user_id: int, db: Session = Depends(get_db)):
 @router.post("/complete-placement/{user_id}")
 def complete_placement(user_id: int, score: int, db: Session = Depends(get_db)):
     auth_service = AuthService()
+    user = db.query(User).filter(User.id == user_id).first()
     
-    # AI Logic: Determine level based on diagnostic score
-    # Score 0-2 -> Level 1 (Easy), 3-4 -> Level 2 (Medium), 5+ -> Level 3 (Hard)
-    calculated_level = 1
-    if score >= 5:
-        calculated_level = 3
-    elif score >= 3:
-        calculated_level = 2
-    
-    user = auth_service.update_placement_status(db, user_id, calculated_level)
     if not user:
-        raise HTTPException(status_code=404, detail="User account not found")
-        
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Yeni ve Hassas Seviye Mantığı (10 soru üzerinden)
+    # 0-3 doğru: Level 1 (Beginner)
+    # 4-7 doğru: Level 2 (Intermediate)
+    # 8-10 doğru: Level 3 (Advanced)
+    new_level = 1
+    if score >= 8:
+        new_level = 3
+    elif score >= 4:
+        new_level = 2
+    
+    user.current_level = new_level
+    user.is_placement_completed = True
+    db.commit()
+    
     return {
-        "message": "Diagnostic assessment completed successfully",
-        "assigned_level": calculated_level,
-        "status": "success"
+        "message": "Diagnostic completed", 
+        "new_level": new_level,
+        "score": score
     }

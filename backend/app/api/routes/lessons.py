@@ -24,3 +24,10 @@ def create_new_lesson(
     admin_check = Depends(check_admin_role)
 ):
     return lesson_service.create_lesson(db, lesson)
+
+@router.get("/{lesson_id}", response_model=LessonResponse)
+def get_lesson_detail(lesson_id: int, db: Session = Depends(get_db)):
+    lesson = lesson_service.get_lesson_by_id(db, lesson_id)
+    if not lesson:
+        raise HTTPException(status_code=404, detail="Lesson not found")
+    return lesson

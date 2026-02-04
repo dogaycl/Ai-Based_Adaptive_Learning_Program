@@ -23,3 +23,5 @@ class LessonService:
     def update_lesson(self, db: Session, lesson_id: int, lesson_data: LessonCreate):
         update_map = lesson_data.dict() # Tüm alanları otomatik eşle
         return self.lesson_repo.update(db, lesson_id, update_map)
+    def get_lesson_by_id(self, db: Session, lesson_id: int):
+        return self.lesson_repo.get_by_id(db, lesson_id)

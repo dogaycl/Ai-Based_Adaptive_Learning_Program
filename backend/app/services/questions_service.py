@@ -11,7 +11,7 @@ class QuestionService:
         db_question = Question(
             lesson_id=question_data.lesson_id,
             content=question_data.content,
-            option_a=question_data.option_a, # Yeni alanlar
+            option_a=question_data.option_a,
             option_b=question_data.option_b,
             option_c=question_data.option_c,
             option_d=question_data.option_d,
@@ -22,3 +22,14 @@ class QuestionService:
 
     def get_lesson_questions(self, db: Session, lesson_id: int):
         return self.question_repo.get_questions_by_lesson(db, lesson_id)
+
+    # --- EKSİK OLAN KISIMLAR EKLENDİ ---
+    
+    def update_question(self, db: Session, question_id: int, question_data: QuestionCreate):
+        # Pydantic modelini dictionary'e çevirip repository'e yolla
+        update_data = question_data.dict()
+        return self.question_repo.update(db, question_id, update_data)
+
+    def remove_question(self, db: Session, question_id: int):
+        # Repository'deki delete metodunu çağır
+        return self.question_repo.delete(db, question_id)

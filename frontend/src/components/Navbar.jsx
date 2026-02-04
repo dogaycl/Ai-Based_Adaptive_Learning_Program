@@ -1,6 +1,8 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { getUserInfo } from '../utils/authUtils';
+// 1. Logoyu import ediyoruz
+import logo from '../assets/logo.jpg';
 
 const Navbar = () => {
     const navigate = useNavigate();
@@ -13,52 +15,54 @@ const Navbar = () => {
         navigate('/login');
     };
 
-    // Aktif sayfa kontrolü (CSS için)
-    const isActive = (path) => location.pathname === path ? 'border-b-2 border-white' : '';
-
     return (
         <nav className="bg-soft-green text-white shadow-md sticky top-0 z-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-16 items-center">
-                    {/* Logo */}
-                    <Link to="/" className="flex items-center gap-2">
-                        <span className="text-xl font-bold tracking-tight">AI LEARN</span>
-                        <div className="h-2 w-2 bg-white rounded-full animate-pulse"></div>
+                    
+                    {/* --- LOGO VE BAŞLIK KISMI --- */}
+                    <Link to="/" className="flex items-center gap-3 group">
+                        {/* Logo Resmi */}
+                        <img 
+                            src={logo} 
+                            alt="Logo" 
+                            className="h-10 w-10 rounded-xl object-cover border-2 border-white/20 group-hover:border-white transition"
+                        />
+                        
+                        {/* Yazı Alanı */}
+                        <div className="flex flex-col">
+                            <span className="text-lg font-bold tracking-tight font-mono leading-none">
+                                Learn Software
+                            </span>
+                            <span className="text-xs font-medium text-green-100 font-mono tracking-wider">
+                                with AI
+                            </span>
+                        </div>
                     </Link>
 
-                    {/* Menü Linkleri */}
+                    {/* --- MENÜ LİNKLERİ --- */}
                     <div className="hidden md:flex items-center gap-8">
                         {token ? (
                             <>
                                 {user?.role === 'teacher' ? (
                                     <>
-                                        <Link to="/teacher-dashboard" className={`hover:text-gray-200 transition ${isActive('/teacher-dashboard')}`}>
-                                            Teacher Panel
-                                        </Link>
-                                        <Link to="/teacher/add-lesson" className={`hover:text-gray-200 transition ${isActive('/teacher/add-lesson')}`}>
-                                            Add Lesson
-                                        </Link>
+                                        <Link to="/teacher-dashboard" className="hover:text-gray-200 transition font-medium">Dashboard</Link>
                                     </>
                                 ) : (
                                     <>
-                                        <Link to="/dashboard" className={`hover:text-gray-200 transition ${isActive('/dashboard')}`}>
-                                            My Dashboard
-                                        </Link>
-                                        <Link to="/placement-test" className={`hover:text-gray-200 transition ${isActive('/placement-test')}`}>
-                                            Level Test
-                                        </Link>
+                                        <Link to="/dashboard" className="hover:text-gray-200 transition font-medium">My Dashboard</Link>
                                     </>
                                 )}
                             </>
                         ) : null}
                     </div>
 
-                    {/* Sağ Kısım (User & Logout) */}
+                    {/* --- SAĞ KISIM (USER & LOGOUT) --- */}
                     <div className="flex items-center gap-4">
                         {token ? (
                             <div className="flex items-center gap-4">
-                                <span className="text-sm font-medium bg-white/20 px-3 py-1 rounded-full capitalize">
-                                    {user?.role}: {user?.sub?.split('@')[0]}
+                                <span className="text-sm font-medium bg-white/10 px-4 py-1.5 rounded-full capitalize border border-white/10">
+                                    {user?.role === 'teacher' ? '👨‍🏫 Instructor' : '🎓 Student'}
                                 </span>
                                 <button 
                                     onClick={handleLogout}
@@ -70,7 +74,7 @@ const Navbar = () => {
                         ) : (
                             <div className="flex gap-4">
                                 <Link to="/login" className="hover:text-gray-200 font-medium">Login</Link>
-                                <Link to="/register" className="bg-white text-soft-green px-4 py-1.5 rounded-lg font-bold hover:bg-gray-100">Sign Up</Link>
+                                <Link to="/register" className="bg-white text-soft-green px-4 py-1.5 rounded-lg font-bold hover:bg-gray-100 transition shadow-lg shadow-green-900/20">Sign Up</Link>
                             </div>
                         )}
                     </div>

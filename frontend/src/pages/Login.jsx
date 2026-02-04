@@ -2,8 +2,11 @@ import React, { useState } from 'react';
 import API from '../api/axiosConfig';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { getUserInfo } from '../utils/authUtils';
 import { Mail, Lock, LogIn, ArrowRight } from 'lucide-react';
+// KRİTİK EKSİK: getUserInfo import edilmeli
+import { getUserInfo } from '../utils/authUtils'; 
+// Arka plan görseli
+import bgImage from '../assets/bg.jpg'; 
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -16,39 +19,59 @@ const Login = () => {
         setLoading(true);
         try {
             const response = await API.post('/auth/login', { email, password });
+            
+            // 1. Token'ı kaydet
             localStorage.setItem('token', response.data.access_token);
             
-            // Decode token to find role
-            const userInfo = getUserInfo();
-            toast.success(`Welcome back, ${userInfo?.sub?.split('@')[0]}!`);
+            // 2. Token kaydedildikten sonra bilgileri çöz
+            const userInfo = getUserInfo(); 
             
-            // Intelligent Redirect based on Role
-            setTimeout(() => {
-                if (userInfo?.role === 'teacher') {
+            if (userInfo) {
+                toast.success(`Welcome back, ${userInfo.sub.split('@')[0]}!`);
+                
+                // 3. Role göre kesin yönlendirme yap
+                // Not: 'teacher' küçük harf geliyorsa kontrolü ona göre yapıyoruz
+                if (userInfo.role === 'teacher' || userInfo.role === 'admin') {
                     navigate('/teacher-dashboard');
                 } else {
                     navigate('/dashboard');
                 }
-            }, 1000);
+            } else {
+                throw new Error("User info could not be retrieved.");
+            }
             
         } catch (error) {
             setLoading(false);
+            console.error("Login Error:", error);
             toast.error(error.response?.data?.detail || "Invalid credentials.");
         }
     };
 
     return (
-        <div className="min-h-[80vh] flex items-center justify-center">
-            <div className="bg-white p-10 rounded-3xl shadow-xl border border-gray-100 w-full max-w-md relative overflow-hidden">
-                {/* Decorative Top Bar */}
-                <div className="absolute top-0 left-0 w-full h-2 bg-soft-green"></div>
+        <div className="min-h-[100vh] flex items-center justify-center relative overflow-hidden">
+            
+            {/* --- BACKGROUND LAYER --- */}
+            <div 
+                className="absolute inset-0 z-0"
+                style={{
+                    backgroundImage: `url(${bgImage})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    filter: 'blur(1px)', 
+                    transform: 'scale(1.1)' 
+                }}
+            />
+            <div className="absolute inset-0 z-0 bg-black/40" />
+
+            {/* FORM CARD */}
+            <div className="bg-white/90 backdrop-blur-md p-10 rounded-3xl shadow-2xl border border-white/50 w-full max-w-md relative z-10">
                 
                 <div className="text-center mb-8">
                     <div className="w-16 h-16 bg-soft-green/10 rounded-2xl flex items-center justify-center mx-auto mb-4 text-soft-green">
                         <LogIn size={32} />
                     </div>
                     <h2 className="text-3xl font-black text-dark-gray">Welcome Back</h2>
-                    <p className="text-gray-400 mt-2">Sign in to continue your adaptive learning journey.</p>
+                    <p className="text-gray-500 mt-2">Sign in to continue your adaptive learning journey.</p>
                 </div>
 
                 <form onSubmit={handleLogin} className="space-y-6">
@@ -58,9 +81,11 @@ const Login = () => {
                             <Mail className="absolute left-4 top-3.5 text-gray-400" size={20} />
                             <input 
                                 type="email" 
-                                className="w-full pl-12 pr-4 py-3 bg-soft-gray border-transparent focus:bg-white focus:border-soft-green focus:ring-2 focus:ring-soft-green/20 rounded-xl outline-none transition" 
-                                placeholder="student@university.edu"
-                                value={email} onChange={(e) => setEmail(e.target.value)} required 
+                                className="w-full pl-12 pr-4 py-3 bg-soft-gray/50 border border-gray-200 focus:bg-white focus:border-soft-green focus:ring-2 focus:ring-soft-green/20 rounded-xl outline-none transition" 
+                                placeholder="name@university.edu"
+                                value={email} 
+                                onChange={(e) => setEmail(e.target.value)} 
+                                required 
                             />
                         </div>
                     </div>
@@ -71,9 +96,11 @@ const Login = () => {
                             <Lock className="absolute left-4 top-3.5 text-gray-400" size={20} />
                             <input 
                                 type="password" 
-                                className="w-full pl-12 pr-4 py-3 bg-soft-gray border-transparent focus:bg-white focus:border-soft-green focus:ring-2 focus:ring-soft-green/20 rounded-xl outline-none transition" 
+                                className="w-full pl-12 pr-4 py-3 bg-soft-gray/50 border border-gray-200 focus:bg-white focus:border-soft-green focus:ring-2 focus:ring-soft-green/20 rounded-xl outline-none transition" 
                                 placeholder="••••••••"
-                                value={password} onChange={(e) => setPassword(e.target.value)} required 
+                                value={password} 
+                                onChange={(e) => setPassword(e.target.value)} 
+                                required 
                             />
                         </div>
                     </div>

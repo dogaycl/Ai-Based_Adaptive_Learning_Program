@@ -3,6 +3,8 @@ import API from '../api/axiosConfig';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { User, Mail, Lock, GraduationCap, Briefcase, CheckCircle } from 'lucide-react';
+// 1. Görseli import et
+import bgImage from '../assets/bg.jpg'; 
 
 const Register = () => {
     const [formData, setFormData] = useState({
@@ -15,6 +17,7 @@ const Register = () => {
     const navigate = useNavigate();
 
     const handleRegister = async (e) => {
+        // ... (kodlar aynı) ...
         e.preventDefault();
         setLoading(true);
         try {
@@ -28,8 +31,23 @@ const Register = () => {
     };
 
     return (
-        <div className="min-h-[80vh] flex items-center justify-center py-10">
-            <div className="bg-white p-10 rounded-3xl shadow-xl border border-gray-100 w-full max-w-lg">
+        <div className="min-h-[100vh] flex items-center justify-center py-10 relative overflow-hidden">
+            
+             {/* --- ARKA PLAN KATMANI --- */}
+             <div 
+                className="absolute inset-0 z-0"
+                style={{
+                    backgroundImage: `url(${bgImage})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    filter: 'blur(1px)',
+                    transform: 'scale(1.1)'
+                }}
+            />
+            <div className="absolute inset-0 z-0 bg-black/30" />
+
+            {/* FORM KUTUSU */}
+            <div className="bg-white/95 backdrop-blur-sm p-10 rounded-3xl shadow-2xl border border-white/50 w-full max-w-lg relative z-10">
                 <div className="text-center mb-8">
                     <h2 className="text-3xl font-black text-dark-gray">Create Account</h2>
                     <p className="text-gray-400 mt-2">Join the AI-powered learning revolution.</p>
@@ -64,7 +82,7 @@ const Register = () => {
                         <User className="absolute left-4 top-3.5 text-gray-400" size={20} />
                         <input 
                             type="text" 
-                            className="w-full pl-12 pr-4 py-3 bg-soft-gray border-transparent focus:bg-white focus:border-soft-green focus:ring-2 focus:ring-soft-green/20 rounded-xl outline-none" 
+                            className="w-full pl-12 pr-4 py-3 bg-soft-gray/50 border-transparent focus:bg-white focus:border-soft-green border rounded-xl outline-none" 
                             placeholder="Username"
                             value={formData.username} onChange={(e) => setFormData({...formData, username: e.target.value})} required 
                         />
@@ -74,7 +92,7 @@ const Register = () => {
                         <Mail className="absolute left-4 top-3.5 text-gray-400" size={20} />
                         <input 
                             type="email" 
-                            className="w-full pl-12 pr-4 py-3 bg-soft-gray border-transparent focus:bg-white focus:border-soft-green focus:ring-2 focus:ring-soft-green/20 rounded-xl outline-none" 
+                            className="w-full pl-12 pr-4 py-3 bg-soft-gray/50 border-transparent focus:bg-white focus:border-soft-green border rounded-xl outline-none" 
                             placeholder="Email Address"
                             value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} required 
                         />
@@ -84,7 +102,7 @@ const Register = () => {
                         <Lock className="absolute left-4 top-3.5 text-gray-400" size={20} />
                         <input 
                             type="password" 
-                            className="w-full pl-12 pr-4 py-3 bg-soft-gray border-transparent focus:bg-white focus:border-soft-green focus:ring-2 focus:ring-soft-green/20 rounded-xl outline-none" 
+                            className="w-full pl-12 pr-4 py-3 bg-soft-gray/50 border-transparent focus:bg-white focus:border-soft-green border rounded-xl outline-none" 
                             placeholder="Password"
                             value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} required 
                         />

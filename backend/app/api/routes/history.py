@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.schemas.history import HistoryCreate, HistoryResponse
 from app.services.history_service import HistoryService
+from app.core.security import check_admin_role
+
 
 router = APIRouter(prefix="/history", tags=["Student History"])
 history_service = HistoryService()
@@ -30,3 +32,14 @@ def get_advanced_summary(user_id: int, db: Session = Depends(get_db)):
 def get_adaptive_recommendation(user_id: int, db: Session = Depends(get_db)):
     # AI/Adaptif mantığına göre öğrenciye özel yönlendirme
     return history_service.get_adaptive_recommendation(db, user_id)
+
+@router.get("/trend/{user_id}")
+def get_learning_trend(user_id: int, db: Session = Depends(get_db)):
+    return history_service.get_user_trend(db, user_id)
+
+@router.get("/teacher/analytics")
+def get_teacher_analytics(
+    db: Session = Depends(get_db),
+    admin_check = Depends(check_admin_role) # Sadece öğretmen/admin görebilir
+):
+    return history_service.get_class_analytics(db)
