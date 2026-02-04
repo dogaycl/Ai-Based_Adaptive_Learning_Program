@@ -10,7 +10,7 @@ class DifficultyType(enum.Enum):
     HARD = "hard"
 
 class Lesson(Base):
-    __tablename__ = "lessons"
+    _tablename_ = "lessons"
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(100), nullable=False)
@@ -22,3 +22,4 @@ class Lesson(Base):
 
     # İlişkiler
     questions = relationship("Question", back_populates="lesson", cascade="all, delete-orphan")
+    

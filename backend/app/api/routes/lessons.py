@@ -6,6 +6,7 @@ from app.services.lessons_service import LessonService
 from typing import List
 from app.core.security import check_admin_role
 
+
 # Sonda bölü işareti olmaksızın tanımlayalım
 router = APIRouter(prefix="/lessons", tags=["Lessons"])
 lesson_service = LessonService()
@@ -31,3 +32,20 @@ def get_lesson_detail(lesson_id: int, db: Session = Depends(get_db)):
     if not lesson:
         raise HTTPException(status_code=404, detail="Lesson not found")
     return lesson
+
+@router.delete("/{lesson_id}")
+def delete_lesson(
+    lesson_id: int, 
+    db: Session = Depends(get_db),
+    admin_check = Depends(check_admin_role) # Sadece öğretmen silebilir
+):
+    # Dersi bul
+    lesson = db.query(Lesson).filter(Lesson.id == lesson_id).first()
+    if not lesson:
+        raise HTTPException(status_code=404, detail="Lesson not found")
+    
+    # Dersi sil (Veritabanı ayarların 'cascade' ise bağlı sorular otomatik silinir)
+    db.delete(lesson)
+    db.commit()
+    
+    return {"message": "Lesson and associated content deleted successfully"}

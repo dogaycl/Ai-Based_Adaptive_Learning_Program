@@ -90,45 +90,36 @@ const TeacherDashboard = () => {
 
                 {/* Sağ: Gerçek Verili Grafik */}
                 <div className="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                    <h3 className="font-bold text-gray-700 mb-6 flex items-center gap-2">
-                        <TrendingUp size={20} className="text-soft-green"/> Class Performance (Pass Rate %)
-                    </h3>
-                    
-                    {/* min-h-[250px] ile grafik hatasını önledik */}
-                    <div className="h-64 w-full min-h-[250px]">
-                        {analytics.lessons && analytics.lessons.length > 0 ? (
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={analytics.lessons}>
-                                    <XAxis 
-                                        dataKey="name" 
-                                        tick={{fontSize: 10}} 
-                                        interval={0} 
-                                        height={50} 
-                                        angle={-15} 
-                                        textAnchor="end" 
-                                        axisLine={false} 
-                                        tickLine={false} 
-                                    />
-                                    <Tooltip 
-                                        cursor={{fill: 'transparent'}} 
-                                        contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'}} 
-                                        formatter={(value) => [`${value}%`, 'Pass Rate']}
-                                    />
-                                    <Bar dataKey="passRate" radius={[8, 8, 8, 8]} barSize={40}>
-                                        {analytics.lessons.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={entry.passRate < 50 ? '#EF4444' : '#4A7C44'} />
-                                        ))}
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
-                        ) : (
-                            <div className="h-full flex flex-col items-center justify-center text-gray-400 text-sm">
-                                <AlertTriangle className="mb-2 opacity-50" size={32} />
-                                No performance data yet. Wait for students to take quizzes.
-                            </div>
-                        )}
-                    </div>
-                </div>
+    <h3 className="font-bold text-gray-700 mb-6 flex items-center gap-2">
+        <TrendingUp size={20} className="text-soft-green"/> Class Performance (Pass Rate %)
+    </h3>
+    
+    {/* min-h-[250px] ekleyerek Recharts'ın boyut hatası almasını engelliyoruz */}
+    <div className="h-64 w-full min-h-[250px] flex items-center justify-center">
+        {analytics.lessons && analytics.lessons.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={analytics.lessons}>
+                    <XAxis dataKey="name" tick={{fontSize: 10}} interval={0} height={50} angle={-15} textAnchor="end" axisLine={false} tickLine={false} />
+                    <Tooltip 
+                        cursor={{fill: 'transparent'}} 
+                        contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'}} 
+                        formatter={(value) => [`${value}%`, 'Pass Rate']}
+                    />
+                    <Bar dataKey="passRate" radius={[8, 8, 8, 8]} barSize={40}>
+                        {analytics.lessons.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.passRate < 50 ? '#EF4444' : '#4A7C44'} />
+                        ))}
+                    </Bar>
+                </BarChart>
+            </ResponsiveContainer>
+        ) : (
+            <div className="text-gray-400 italic flex flex-col items-center gap-2">
+                <div className="w-10 h-10 border-4 border-soft-green/20 border-t-soft-green rounded-full animate-spin"></div>
+                <span>Gathering analytics data...</span>
+            </div>
+        )}
+    </div>
+</div>
             </div>
 
             {/* --- LESSON LIST --- */}
