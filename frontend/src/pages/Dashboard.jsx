@@ -3,11 +3,10 @@ import API from '../api/axiosConfig';
 import { getUserInfo } from '../utils/authUtils';
 import { useNavigate } from 'react-router-dom';
 import { 
-    LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Area, AreaChart 
+    AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid 
 } from 'recharts';
 import { 
-    BookOpen, Activity, Zap, TrendingUp, CheckCircle, 
-    Clock, Target, BrainCircuit, ArrowRight, Star
+    BookOpen, Activity, Zap, TrendingUp, Target, BrainCircuit, ArrowRight, Star, AlertTriangle
 } from 'lucide-react';
 
 const Dashboard = () => {
@@ -24,7 +23,6 @@ const Dashboard = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Paralel veri çekimi
                 const [statusRes, statsRes, aiRes, lessonsRes, summaryRes] = await Promise.all([
                     API.get(`/auth/me/${user.id}`),
                     API.get(`/history/stats/${user.id}`).catch(() => ({ data: { accuracy: 0, total_correct: 0, total_questions: 0 } })),
@@ -56,7 +54,6 @@ const Dashboard = () => {
         </div>
     );
 
-    // Grafik Verisi Hazırlığı (Çizgi Grafik İçin)
     const chartData = summary?.lesson_breakdown 
         ? Object.entries(summary.lesson_breakdown).map(([name, score]) => ({ name, score })) 
         : [];
@@ -99,20 +96,26 @@ const Dashboard = () => {
                     </div>
 
                     {/* Sağ: AI Tavsiyesi */}
-                    <div className="md:col-span-2 bg-gradient-to-br from-soft-green to-green-800 rounded-3xl p-8 text-white relative overflow-hidden shadow-xl group">
+                    <div className={`md:col-span-2 rounded-3xl p-8 text-white relative overflow-hidden shadow-xl group transition-colors duration-500 ${
+                        aiRecommendation?.is_critical 
+                        ? 'bg-gradient-to-br from-red-600 to-orange-700'  // Kritikse Kırmızı
+                        : 'bg-gradient-to-br from-soft-green to-green-800' // Normalse Yeşil
+                    }`}>
                         <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
                         
                         {aiRecommendation ? (
                             <div className="relative z-10 h-full flex flex-col justify-between">
                                 <div>
                                     <div className="flex items-center gap-2 mb-3 opacity-90">
-                                        <Zap className="animate-pulse" size={20} />
-                                        <span className="text-xs font-bold uppercase tracking-widest">AI Coach Insight</span>
+                                        {aiRecommendation.is_critical ? <AlertTriangle className="animate-pulse" /> : <Zap className="animate-pulse" />}
+                                        <span className="text-xs font-bold uppercase tracking-widest">
+                                            {aiRecommendation.is_critical ? "CRITICAL INTERVENTION NEEDED" : "AI COACH INSIGHT"}
+                                        </span>
                                     </div>
                                     <h2 className="text-3xl font-bold mb-3 leading-tight text-white">
                                         {aiRecommendation.title}
                                     </h2>
-                                    <p className="text-green-100 text-lg mb-6 max-w-xl leading-relaxed">
+                                    <p className="text-white/90 text-lg mb-6 max-w-xl leading-relaxed">
                                         "{aiRecommendation.message}"
                                     </p>
                                     
@@ -128,10 +131,22 @@ const Dashboard = () => {
 
                                 <button 
                                     onClick={() => {
-                                        const targetLesson = lessons.find(l => l.title === aiRecommendation.target_lesson);
-                                        if (targetLesson) navigate(`/lesson/${targetLesson.id}`);
+                                        if (!aiRecommendation.target_lesson || aiRecommendation.recommended_action === "Start Diagnostic Test") {
+                                            navigate('/placement-test');
+                                        } else {
+                                            const targetLesson = lessons.find(l => l.title === aiRecommendation.target_lesson);
+                                            if (targetLesson) {
+                                                navigate(`/lesson/${targetLesson.id}`);
+                                            } else {
+                                                console.warn("Hedef ders bulunamadı, listeye yönlendiriliyor.");
+                                            }
+                                        }
                                     }}
-                                    className="self-start bg-white text-soft-green px-8 py-3 rounded-xl font-bold hover:bg-green-50 transition shadow-lg flex items-center gap-2 group-hover:translate-x-1 duration-300"
+                                    className={`self-start px-8 py-3 rounded-xl font-bold transition shadow-lg flex items-center gap-2 group-hover:translate-x-1 duration-300 cursor-pointer ${
+                                        aiRecommendation.is_critical 
+                                        ? 'bg-white text-red-600 hover:bg-red-50' 
+                                        : 'bg-white text-soft-green hover:bg-green-50'
+                                    }`}
                                 >
                                     {aiRecommendation.recommended_action} <ArrowRight size={18} />
                                 </button>
@@ -144,10 +159,10 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                {/* --- 2. İSTATİSTİKLER VE LİSTE (ÇİZGİ GRAFİK BURADA) --- */}
+                {/* --- 2. İSTATİSTİKLER VE LİSTE --- */}
                 <div className="grid lg:grid-cols-3 gap-8">
                     
-                    {/* Sol Kolon: Başarı Grafiği (LineChart) */}
+                    {/* Sol Kolon: Başarı Grafiği */}
                     <div className="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
                         <h3 className="text-xl font-bold text-dark-gray mb-6 flex items-center gap-2">
                             <TrendingUp className="text-soft-green" /> Performance Trends
@@ -188,7 +203,7 @@ const Dashboard = () => {
                         </div>
                     </div>
 
-                    {/* Sağ Kolon: Ders Listesi */}
+                    {/* Sağ Kolon: Ders Listesi (BURASI GÜNCELLENDİ) */}
                     <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 h-fit">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-xl font-bold text-dark-gray flex items-center gap-2">
@@ -200,29 +215,48 @@ const Dashboard = () => {
                         </div>
                         
                         <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                            {lessons.map((lesson) => (
-                                <div 
-                                    key={lesson.id} 
-                                    onClick={() => navigate(`/lesson/${lesson.id}`)}
-                                    className="group p-4 rounded-2xl border border-gray-100 hover:border-soft-green hover:bg-green-50/30 transition cursor-pointer flex items-center gap-3"
-                                >
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-xs shadow-sm ${
-                                        lesson.difficulty === 'hard' ? 'bg-red-400' : 
-                                        lesson.difficulty === 'medium' ? 'bg-yellow-400' : 'bg-green-400'
-                                    }`}>
-                                        {lesson.difficulty.substring(0, 1).toUpperCase()}
+                            {lessons.map((lesson) => {
+                                // AI'ın önerdiği ve kritik olan ders mi?
+                                const isTarget = aiRecommendation?.target_lesson === lesson.title;
+                                const isCritical = isTarget && aiRecommendation?.is_critical;
+
+                                return (
+                                    <div 
+                                        key={lesson.id} 
+                                        onClick={() => navigate(`/lesson/${lesson.id}`)}
+                                        className={`group p-4 rounded-2xl border transition cursor-pointer flex items-center gap-3 relative overflow-hidden ${
+                                            isCritical 
+                                            ? 'border-red-500 bg-red-50 hover:bg-red-100 shadow-md shadow-red-100' // Kritik Stil
+                                            : 'border-gray-100 hover:border-soft-green hover:bg-green-50/30' // Normal Stil
+                                        }`}
+                                    >
+                                        {/* Kritikse Yanıp Sönen İkon */}
+                                        {isCritical && (
+                                            <div className="absolute top-2 right-2 text-red-500 animate-pulse">
+                                                <AlertTriangle size={16} />
+                                            </div>
+                                        )}
+
+                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-xs shadow-sm ${
+                                            lesson.difficulty === 'hard' ? 'bg-red-400' : 
+                                            lesson.difficulty === 'medium' ? 'bg-yellow-400' : 'bg-green-400'
+                                        }`}>
+                                            {lesson.difficulty.substring(0, 1).toUpperCase()}
+                                        </div>
+                                        <div className="flex-grow">
+                                            <h4 className={`font-bold text-sm transition ${isCritical ? 'text-red-700' : 'text-dark-gray group-hover:text-soft-green'}`}>
+                                                {lesson.title}
+                                            </h4>
+                                            <p className={`text-xs line-clamp-1 ${isCritical ? 'text-red-400' : 'text-gray-400'}`}>
+                                                {isCritical ? "Priority: Critical Review Needed" : lesson.description}
+                                            </p>
+                                        </div>
+                                        <div className={`transition ${isCritical ? 'text-red-500' : 'text-gray-300 group-hover:text-soft-green'}`}>
+                                            <ArrowRight size={16} />
+                                        </div>
                                     </div>
-                                    <div className="flex-grow">
-                                        <h4 className="font-bold text-dark-gray text-sm group-hover:text-soft-green transition">
-                                            {lesson.title}
-                                        </h4>
-                                        <p className="text-xs text-gray-400 line-clamp-1">{lesson.description}</p>
-                                    </div>
-                                    <div className="text-gray-300 group-hover:text-soft-green transition">
-                                        <ArrowRight size={16} />
-                                    </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
                 </div>

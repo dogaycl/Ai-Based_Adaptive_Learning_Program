@@ -152,3 +152,16 @@ Axios
 📄 License
 
 This project is developed for educational purposes.
+
+
+Fr list:
+Kod,Gereksinim (FR),Durum,Projedeki Karşılığı (Kanıt)
+FR1,Secure Registration & Login (Güvenli Kayıt/Giriş),✅ TAMAM,"auth.py ve jwt.py ile JWT tabanlı, şifreli (hashing) güvenli giriş. Role-based (Öğrenci/Öğretmen) ayrımı var."
+FR2,Personalized Dashboard (Kişiselleştirilmiş Panel),✅ TAMAM,"Dashboard.jsx. Kullanıcının seviyesi, XP'si ve sadece ona özel ""AI Coach"" önerisi gösteriliyor."
+FR3,Data Collection (Veri Toplama),✅ TAMAM,"history_service.py. Her soru çözüldüğünde süre, doğruluk ve cevap veritabanına History tablosuna kaydediliyor."
+FR4,Initial Learning Path (Placement Test),✅ TAMAM,"PlacementTest.jsx. Yeni üye olan kullanıcıyı zorunlu seviye tespit sınavına sokuyor ve seviyesini (1, 2, 3) atıyor."
+FR5,Content Recommendation (İçerik Önerisi),✅ TAMAM,"recommendation.py ve ai_service.py. Başarı oranına ve süreye bakarak ""Review"" (Tekrar et) veya ""Challenge"" (Zorlan) önerisi veriyor."
+FR6,Difficulty Adjustment (Zorluk Ayarı),✅ TAMAM,"AI Servisi (ai_service.py), öğrencinin durumuna göre dinamik soru üretiyor veya sistem zorluk seviyesine göre ders öneriyor."
+FR7,Personalized Quiz (Kişisel Sınav),✅ TAMAM,Quiz.jsx. Kullanıcı testi çözdüğünde anlık geri bildirim alıyor ve sonuç ekranında AI analizi görüyor.
+FR-Adm,Teacher/Admin Content Mgmt (İçerik Yön.),✅ TAMAM,"TeacherDashboard.jsx. Öğretmen ders ekleyebiliyor, silebiliyor, öğrencilerin başarı grafiklerini görebiliyor."
+NFR,Performance & Usability (Performans/Kullanılabilirlik),✅ TAMAM,"React + Tailwind ile responsive tasarım. Backend asenkron (async) çalışıyor, sayfalar arası geçiş çok hızlı."
