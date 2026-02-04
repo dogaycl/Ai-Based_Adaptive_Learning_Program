@@ -10,16 +10,15 @@ class DifficultyType(enum.Enum):
     HARD = "hard"
 
 class Lesson(Base):
-    _tablename_ = "lessons"
+    __tablename__ = "lessons"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(100), nullable=False)
     description = Column(Text, nullable=True)
-    content_text = Column(Text, nullable=True) # Dersin detaylı anlatım metni
-    attachment_url = Column(String(255), nullable=True) # PDF veya Görsel linki
+    content_text = Column(Text, nullable=True) 
+    attachment_url = Column(String(255), nullable=True)
     difficulty = Column(SQLEnum(DifficultyType), default=DifficultyType.MEDIUM)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    # İlişkiler
     questions = relationship("Question", back_populates="lesson", cascade="all, delete-orphan")
-    

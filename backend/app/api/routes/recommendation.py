@@ -13,53 +13,66 @@ def get_ai_recommendation(user_id: int, db: Session = Depends(get_db)):
     lesson_breakdown = summary.get("lesson_breakdown", {})
     total_stats = summary.get("total_stats", {})
     
-    # New User Scenario
+    # --- SENARYO 1: YENİ KULLANICI (HİÇ VERİ YOK) ---
     if not lesson_breakdown:
         return {
+            "title": "Welcome, Future Expert! 🚀",
+            "message": "I'm your AI Coach. To build your personalized path, I need to see you in action!",
             "recommended_action": "Start Diagnostic Test",
-            "reason": "AI needs initial data to build your learning profile.",
-            "adaptive_tip": "Take the placement test to unlock personalized content.",
+            "reason": "We need to calibrate your learning map.",
+            "adaptive_tip": "Don't worry about mistakes. Just do your best!",
             "priority": "high",
             "is_critical": False,
             "target_lesson": None
         }
     
-    # Find weakest area
+    # En zayıf dersi bul
     weakest_lesson = min(lesson_breakdown, key=lesson_breakdown.get)
     success_rate = lesson_breakdown[weakest_lesson]
     
     avg_time = total_stats.get("avg_time", 30) 
     
-    # --- ADVANCED AI LOGIC (ENGLISH) ---
+    # --- MOTIVATIONAL AI LOGIC (COACH MODE) ---
     is_critical = False
+    title = ""
+    message = ""
     
     if success_rate < 45:
-        # Critical Failure Logic
+        # Durum: Kritik (Ama destekleyici dil)
         is_critical = True
-        action = "Critical Review Needed"
-        reason = f"Your success rate in '{weakest_lesson}' is only {int(success_rate)}%. Foundation is weak."
-        tip = "Review the PDF material before attempting more quizzes. Take your time."
+        title = "We believe in you! 💪"
+        action = "Review & Retry"
+        reason = f"It seems '{weakest_lesson}' is a bit tricky right now ({int(success_rate)}%). That's totally normal!"
+        message = "Success isn't about never failing, it's about never quitting. Let's look at the materials again."
+        tip = "Take your time reading the PDF summary before the quiz. No rush!"
         
     elif success_rate < 75:
-        # Improvement Logic
+        # Durum: Gelişiyor (Hız ve Dikkat analizi)
+        title = "Great progress! 🌟"
         if avg_time < 15: 
-            action = "Focus Practice"
-            reason = "You are fast but making errors. AI detected rushing behavior."
-            tip = "Try to spend at least 10 seconds analyzing the question stem."
+            action = "Slow Down a Bit"
+            reason = "You have the speed of a cheetah, but let's sharpen the accuracy."
+            message = "You're answering very fast. If we slow down just a little, your score will skyrocket!"
+            tip = "Read the question twice. The answer is often hiding in the details."
         else:
-            action = "Deep Practice"
-            reason = "Good understanding, but not yet mastered."
-            tip = "Continue with similar difficulty to gain more XP."
+            action = "Reinforce Knowledge"
+            reason = f"You're doing well in '{weakest_lesson}', just a few steps away from mastery."
+            message = "You are building a solid foundation. Keep pushing!"
+            tip = "Try solving similar questions to turn that 'Good' into 'Perfect'."
     else:
-        # Mastery Logic
-        action = "Challenge: Hard Level"
-        reason = "You have dominated this topic. AI is increasing the difficulty."
-        tip = "Switch to 'Hard' difficulty questions to test your limits."
+        # Durum: Usta (Challenge Modu)
+        title = "You're on Fire! 🔥"
+        action = "Level Up Challenge"
+        reason = f"You've dominated '{weakest_lesson}'. It's too easy for you now."
+        message = "Excellent work! I'm updating your curriculum to include more advanced challenges."
+        tip = "You're ready for the Hard mode. Let's test your limits!"
 
     return {
-        "recommended_action": action,
-        "reason": reason,
-        "adaptive_tip": tip,
+        "title": title,                 # UI Başlığı (Yeni)
+        "message": message,             # UI Motivasyon Mesajı (Yeni)
+        "recommended_action": action,   # Buton Metni
+        "reason": reason,               # Analiz Nedeni
+        "adaptive_tip": tip,            # İpucu
         "priority": "high" if is_critical else "normal",
         "is_critical": is_critical,
         "target_lesson": weakest_lesson
