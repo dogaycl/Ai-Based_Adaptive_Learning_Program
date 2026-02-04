@@ -1,6 +1,5 @@
 🎓 AI-Based Adaptive Learning Platform
-
-Contributors
+👥 Contributors
 
 Nisa Doğa Yücel – 220201012
 
@@ -74,7 +73,7 @@ Produces meaningful performance insights for teachers
 This AI-supported logic runs continuously during quizzes and placement tests and directly affects the learning flow.
 
 📊 Analytics & Performance Monitoring
-Teacher View
+👨‍🏫 Teacher View
 
 Real-time visibility into:
 
@@ -88,7 +87,7 @@ Data-driven evaluation of student performance
 
 Clear overview of class-wide success
 
-Student View
+🎓 Student View
 
 Level estimation based on real performance
 
@@ -97,10 +96,9 @@ Continuous feedback through adaptive quizzes
 Measurable learning progress
 
 🧠 Intelligent Question Management
-
 Teachers can:
 
-Add lecture notes or videos (e.g. pdf or url)
+Add lecture notes or videos (e.g. PDF or URL)
 
 Manually manage questions
 
@@ -112,7 +110,7 @@ Is associated with a difficulty level
 
 Is used directly in adaptive decision-making
 
-Student evaluation is continuously recalculated based on question difficulty and performance
+Student evaluation is continuously recalculated based on question difficulty and performance.
 
 🏆 Why This Project Stands Out
 
